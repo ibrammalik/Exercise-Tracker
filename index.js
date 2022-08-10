@@ -57,15 +57,15 @@ app.post('/api/users', (req, res) => {
   newUser.save((err, data) => {
     if (err) return console.error(err);
     console.log(data);
-    res.send(data)
+    res.json({username:data.username, _id:data._id})
   })
 });
 
       //Add Exercises
 app.post('/api/users/:_id/exercises', (req, res) => {
-  const _id = req.body[":_id"]
+  const _id = req.params.id
   const description = req.body.description
-  const duration = req.body.duration
+  const duration = Number(req.body.duration)
   const date = () => {
     if (!req.body.date) return new Date().toDateString()
     return new Date(req.body.date).toDateString()
@@ -76,21 +76,29 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     date: date()
   }}}
   User.findOneAndUpdate({_id: _id}, update, (err,data) => {
-    res.send({ _id, username:data.username, date:date(), duration, description })
+    res.send({username:data.username, description, duration, date:date(), _id,})
     let logLength = data.log.length + 1
     console.log(logLength)
     User.findOneAndUpdate({_id: _id}, {count: logLength}, (err,data) => {
       if (err) throw err
     })
   })
-
 })
 
       ///Get User's Exercise Logs
 app.get('/api/users/:_id/logs', (req, res) => {
   const _id = req.params._id
+  let log =[]
   User.findById(_id, (err, data) => {
-    res.send({_id:data._id, username:data.username, count:data.count, log:data.log})
+    data.log.forEach(objExercises => {
+      let newObjExercises = {
+        "description": objExercises.description,
+        "duration": objExercises.duration,
+        "date": objExercises.date
+      }
+      log.push(newObjExercises)
+    })
+    res.send({username:data.username, count:data.count, _id:data._id, log})
   })
 })
 
